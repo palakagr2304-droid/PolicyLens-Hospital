@@ -338,9 +338,9 @@ img,svg{display:block;}
 .input-area{padding:0 var(--space-8) var(--space-6);max-width:780px;width:100%;margin:0 auto;flex-shrink:0;}
 
 /* Scope notice */
-.scope-notice{display:flex;align-items:flex-start;gap:var(--space-2);padding:var(--space-2) var(--space-3);background:var(--amber-100);border:1px solid rgba(245,158,11,0.2);border-radius:var(--r-md);margin-bottom:var(--space-3);font-size:var(--text-xs);color:#92400e;line-height:1.5;}
-[data-theme="dark"] .scope-notice{background:rgba(245,158,11,0.06);}
-.scope-notice svg{width:13px;height:13px;color:var(--amber-500);flex-shrink:0;margin-top:1px;}
+.scope-notice{display:flex;align-items:center;gap:var(--space-2);padding:7px var(--space-3);background:rgba(37,99,235,0.06);border:1px solid rgba(37,99,235,0.16);border-radius:var(--r-md);margin-bottom:var(--space-3);font-size:var(--text-xs);color:var(--gray-600);line-height:1.5;}
+[data-theme="dark"] .scope-notice{background:rgba(110,168,254,0.08);border-color:rgba(110,168,254,0.2);color:var(--gray-700);}
+.scope-notice svg{width:14px;height:14px;color:var(--blue-400);flex-shrink:0;}
 
 /* Question box */
 .question-box{background:var(--white);border:1.5px solid var(--gray-200);border-radius:var(--r-xl);box-shadow:var(--shadow-md);overflow:hidden;transition:border-color var(--t-fast),box-shadow var(--t-fast);}
@@ -381,7 +381,11 @@ img,svg{display:block;}
 .policy-card{background:var(--white);border:1px solid var(--gray-200);border-radius:var(--r-lg);padding:var(--space-5);transition:border-color var(--t-fast),box-shadow var(--t-fast),transform var(--t-base);cursor:default;}
 [data-theme="dark"] .policy-card{background:var(--gray-100);border-color:var(--gray-300);}
 .policy-card:hover{border-color:var(--blue-300);box-shadow:var(--shadow-md);transform:translateY(-2px);}
-.policy-card-icon{width:40px;height:40px;border-radius:var(--r-md);display:flex;align-items:center;justify-content:center;margin-bottom:var(--space-4);}
+.policy-card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-4);}
+.policy-card-icon{width:40px;height:40px;border-radius:var(--r-md);display:flex;align-items:center;justify-content:center;}
+.policy-card-top .policy-card-icon{margin-bottom:0;}
+.policy-card-badge{font-size:11px;font-weight:var(--fw-semibold);padding:2px 8px;border-radius:var(--r-full);background:var(--gray-100);color:var(--gray-600);border:1px solid var(--gray-200);font-family:'SF Mono','Roboto Mono',monospace;}
+[data-theme="dark"] .policy-card-badge{background:var(--gray-200);color:var(--gray-700);border-color:var(--gray-300);}
 .policy-card-icon svg{width:20px;height:20px;}
 .policy-card h3{font-size:var(--text-base);font-weight:var(--fw-semibold);color:var(--gray-900);margin-bottom:4px;}
 [data-theme="dark"] .policy-card h3{color:var(--gray-700);}

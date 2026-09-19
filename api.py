@@ -12,6 +12,7 @@ Then open: http://localhost:8000
 import os
 import sys
 from pathlib import Path
+from typing import Optional, List
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -62,8 +63,6 @@ app = FastAPI(
     version="1.0.0",
 )
 
-
-from typing import Optional, List
 
 # ---------------------------------------------------------
 # CORS — allow frontend origin during development & production

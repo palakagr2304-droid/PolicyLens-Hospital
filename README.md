@@ -1,4 +1,4 @@
-# Policy Lens / CareAssist — Hospital Policy Intelligence Assistant
+# PolicyLens — Hospital Policy Intelligence Assistant
 
 A grounded, hallucination-resistant **Retrieval-Augmented Generation (RAG)** system designed for hospital staff, clinicians, and administrative teams. Policy Lens provides fast, verifiable, and strictly sourced answers to hospital operational, administrative, and compliance policy questions.
 
@@ -102,16 +102,16 @@ hackathon_man/
 ├── tfidf.py                  # Generates TF-IDF vectorizer and sparse matrix
 ├── llm.py                    # Google Gemini client and prompt guardrails
 ├── documents/                # Source hospital policy PDF files
-│   ├── 00_source_reference_notes.pdf
-│   ├── 01_admission_registration_policy.pdf
-│   ├── 02_billing_payment_policy.pdf
-│   ├── 03_insurance_cashless_policy.pdf
-│   ├── 04_visitor_access_policy.pdf
-│   ├── 05_discharge_process_policy.pdf
-│   ├── 06_staff_administrative_policy.pdf
-│   ├── 07_governance_meetings_policy.pdf
-│   ├── 08_patient_records_policy.pdf
-│   └── 09_appointments_outpatient_policy.pdf
+│   ├── 01_source_reference_notes.pdf
+│   ├── 02_admission_registration_policy.pdf
+│   ├── 03_billing_payment_policy.pdf
+│   ├── 04_insurance_cashless_policy.pdf
+│   ├── 05_visitor_access_policy.pdf
+│   ├── 06_discharge_process_policy.pdf
+│   ├── 07_staff_administrative_policy.pdf
+│   ├── 08_governance_meetings_policy.pdf
+│   ├── 09_patient_records_policy.pdf
+│   └── 10_appointments_outpatient_policy.pdf
 ├── frontend/                 # Web interface assets
 │   ├── index.html            # Main web UI
 │   ├── css/

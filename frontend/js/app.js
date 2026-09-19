@@ -708,16 +708,16 @@ function renderSuggestions() {
 
 /* ─── Policy Library ─────────────────────────────────────────── */
 const POLICIES = [
-  { id:'00', name:'Source Reference Notes',      file:'00_source_reference_notes.pdf',      color:'#6366f1', bg:'#eef2ff', icon:'book' },
-  { id:'01', name:'Admission & Registration',    file:'01_admission_registration_policy.pdf',color:'#0ea5e9', bg:'#f0f9ff', icon:'clipboard-list' },
-  { id:'02', name:'Billing & Payment',           file:'02_billing_payment_policy.pdf',       color:'#10b981', bg:'#ecfdf5', icon:'activity' },
-  { id:'03', name:'Insurance & Cashless',        file:'03_insurance_cashless_policy.pdf',    color:'#3b82f6', bg:'#eff6ff', icon:'shield' },
-  { id:'04', name:'Visitor Access',              file:'04_visitor_access_policy.pdf',        color:'#f59e0b', bg:'#fffbeb', icon:'users' },
-  { id:'05', name:'Discharge Process',           file:'05_discharge_process_policy.pdf',     color:'#ef4444', bg:'#fef2f2', icon:'log-out' },
-  { id:'06', name:'Staff Administration',        file:'06_staff_administrative_policy.pdf',  color:'#8b5cf6', bg:'#f5f3ff', icon:'cpu' },
-  { id:'07', name:'Governance & Meetings',       file:'07_governance_meetings_policy.pdf',   color:'#0891b2', bg:'#ecfeff', icon:'layers' },
-  { id:'08', name:'Patient Records',             file:'08_patient_records_policy.pdf',       color:'#16a34a', bg:'#f0fdf4', icon:'folder-open' },
-  { id:'09', name:'Appointments & Outpatient',   file:'09_appointments_outpatient_policy.pdf',color:'#ea580c', bg:'#fff7ed', icon:'calendar' },
+  { id:'01', name:'Source Reference Notes',      file:'01_source_reference_notes.pdf',      color:'#6366f1', bg:'#eef2ff', icon:'book' },
+  { id:'02', name:'Admission & Registration',    file:'02_admission_registration_policy.pdf',color:'#0ea5e9', bg:'#f0f9ff', icon:'clipboard-list' },
+  { id:'03', name:'Billing & Payment',           file:'03_billing_payment_policy.pdf',       color:'#10b981', bg:'#ecfdf5', icon:'activity' },
+  { id:'04', name:'Insurance & Cashless',        file:'04_insurance_cashless_policy.pdf',    color:'#3b82f6', bg:'#eff6ff', icon:'shield' },
+  { id:'05', name:'Visitor Access',              file:'05_visitor_access_policy.pdf',        color:'#f59e0b', bg:'#fffbeb', icon:'users' },
+  { id:'06', name:'Discharge Process',           file:'06_discharge_process_policy.pdf',     color:'#ef4444', bg:'#fef2f2', icon:'log-out' },
+  { id:'07', name:'Staff Administration',        file:'07_staff_administrative_policy.pdf',  color:'#8b5cf6', bg:'#f5f3ff', icon:'cpu' },
+  { id:'08', name:'Governance & Meetings',       file:'08_governance_meetings_policy.pdf',   color:'#0891b2', bg:'#ecfeff', icon:'layers' },
+  { id:'09', name:'Patient Records',             file:'09_patient_records_policy.pdf',       color:'#16a34a', bg:'#f0fdf4', icon:'folder-open' },
+  { id:'10', name:'Appointments & Outpatient',   file:'10_appointments_outpatient_policy.pdf',color:'#ea580c', bg:'#fff7ed', icon:'calendar' },
 ];
 
 function renderPolicyLibrary() {
@@ -725,7 +725,10 @@ function renderPolicyLibrary() {
   if (!c) return;
   c.innerHTML = POLICIES.map(p => `
     <div class="policy-card" role="article" aria-label="${sanitize(p.name)}">
-      <div class="policy-card-icon" style="background:${p.bg};color:${p.color};">${iconHTML(p.icon)}</div>
+      <div class="policy-card-top">
+        <div class="policy-card-icon" style="background:${p.bg};color:${p.color};">${iconHTML(p.icon)}</div>
+        <span class="policy-card-badge">Policy ${p.id}</span>
+      </div>
       <h3>${sanitize(p.name)}</h3>
       <p>${sanitize(p.file)}</p>
       <div class="policy-card-status"><span></span> Indexed &amp; ready</div>

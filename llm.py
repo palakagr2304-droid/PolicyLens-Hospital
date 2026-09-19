@@ -45,7 +45,7 @@ def get_client():
 def generate_answer(question, evidence):
 
     prompt = f"""
-You are CareAssist, a hospital policy
+You are PolicyLens, a hospital policy
 knowledge assistant.
 
 Your job is to answer questions ONLY

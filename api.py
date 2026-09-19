@@ -1,5 +1,5 @@
 """
-CareAssist API
+PolicyLens API
 --------------
 Thin FastAPI wrapper around the existing RAG pipeline (rag.py).
 All RAG logic (retrieval, embeddings, TF-IDF, Gemini) stays untouched.
@@ -58,7 +58,7 @@ def count_documents() -> int:
 # ---------------------------------------------------------
 
 app = FastAPI(
-    title="CareAssist API",
+    title="PolicyLens API",
     description="Hospital Policy Knowledge Assistant",
     version="1.0.0",
 )
@@ -151,7 +151,7 @@ async def ask(request: QuestionRequest):
         raise HTTPException(
             status_code=503,
             detail=(
-                "CareAssist is temporarily unavailable. "
+                "PolicyLens is temporarily unavailable. "
                 "Please try again in a moment."
             ),
         )
@@ -222,7 +222,7 @@ if FRONTEND_DIR.exists():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     print("=" * 60)
-    print("  CareAssist — Hospital Policy Knowledge Assistant")
+    print("  PolicyLens — Hospital Policy Knowledge Assistant")
     print("=" * 60)
     print(f"  Documents indexed : {count_documents()}")
     print(f"  API              : http://localhost:{port}/api/ask")

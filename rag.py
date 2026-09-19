@@ -124,7 +124,7 @@ def answer_question(question):
 if __name__ == "__main__":
 
     print("=" * 70)
-    print("CAREASSIST POLICY ASSISTANT")
+    print("POLICYLENS POLICY ASSISTANT")
     print("=" * 70)
 
     while True:

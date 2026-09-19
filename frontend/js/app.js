@@ -15,7 +15,7 @@ const API_ASK    = '/api/ask';
 const API_STATUS = '/api/status';
 const STORAGE_KEY = 'policyLensConversations';
 const MAX_TITLE_LEN = 50;
-const MAX_HISTORY_ITEMS = 20;
+const MAX_HISTORY_ITEMS = 50;
 
 const LOADING_MESSAGES = [
   { main: 'Searching policies…',             sub: 'Scanning indexed documents' },
@@ -232,16 +232,58 @@ function updateCharCount(val) {
 
 /* ─── Conversation Storage ───────────────────────────────────── */
 function loadAllConversations() {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
-  catch { return []; }
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return [];
+    const convs = JSON.parse(raw);
+    if (!Array.isArray(convs)) return [];
+
+    // Automatically unpack any legacy multi-query sessions into individual search entries
+    const unpacked = [];
+    let neededUnpack = false;
+
+    convs.forEach(c => {
+      if (!c || !Array.isArray(c.messages)) return;
+      const userIndices = [];
+      c.messages.forEach((m, i) => { if (m.role === 'user') userIndices.push(i); });
+      if (userIndices.length > 1) {
+        neededUnpack = true;
+        for (let i = 0; i < userIndices.length; i++) {
+          const start = userIndices[i];
+          const end = (i + 1 < userIndices.length) ? userIndices[i + 1] : c.messages.length;
+          const qText = c.messages[start]?.content || 'Search';
+          const subMessages = c.messages.slice(start, end);
+          unpacked.push({
+            id: i === 0 ? c.id : uuid(),
+            title: qText.length > MAX_TITLE_LEN ? qText.slice(0, MAX_TITLE_LEN) + '…' : qText,
+            messages: subMessages,
+            createdAt: c.createdAt ? c.createdAt + (i * 1000) : Date.now(),
+            updatedAt: c.updatedAt ? c.updatedAt + (i * 1000) : Date.now(),
+          });
+        }
+      } else {
+        unpacked.push(c);
+      }
+    });
+
+    if (neededUnpack) {
+      saveAllConversations(unpacked);
+    }
+    return unpacked;
+  } catch {
+    return [];
+  }
 }
+
 function saveAllConversations(convs) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(convs.slice(0, MAX_HISTORY_ITEMS)));
 }
+
 function getActiveConversation() {
   const convs = loadAllConversations();
   return convs.find(c => c.id === state.activeConversationId) || null;
 }
+
 function upsertConversation(conv) {
   let convs = loadAllConversations();
   const idx = convs.findIndex(c => c.id === conv.id);
@@ -250,7 +292,24 @@ function upsertConversation(conv) {
   saveAllConversations(convs);
 }
 
-/* ─── New Conversation ───────────────────────────────────────── */
+function deleteConversation(id, e) {
+  if (e) e.stopPropagation();
+  let convs = loadAllConversations();
+  convs = convs.filter(c => c.id !== id);
+  saveAllConversations(convs);
+  if (state.activeConversationId === id) {
+    createNewConversation();
+  } else {
+    renderSidebarHistory();
+  }
+}
+
+function clearAllHistory() {
+  saveAllConversations([]);
+  createNewConversation();
+}
+
+/* ─── New Conversation / Search ──────────────────────────────── */
 function createNewConversation() {
   state.activeConversationId = null;
   state.currentMessages = [];
@@ -269,7 +328,7 @@ function createNewConversation() {
   setTimeout(() => inp && inp.focus(), 50);
 }
 
-/* ─── Load Conversation ──────────────────────────────────────── */
+/* ─── Load Conversation / Search ─────────────────────────────── */
 function loadConversation(id) {
   const convs = loadAllConversations();
   const conv = convs.find(c => c.id === id);
@@ -301,7 +360,7 @@ function loadConversation(id) {
         ca.appendChild(buildFeedbackEl(idx, msg.feedback));
       }
     }
-    // Separator between rounds
+    // Separator between rounds if any
     if (msg.role === 'assistant' && idx < conv.messages.length - 1) {
       const sep = document.createElement('hr');
       sep.className = 'conv-separator';
@@ -309,6 +368,7 @@ function loadConversation(id) {
     }
   });
 
+  navigateTo('ask');
   renderSidebarHistory();
   closeMobileSidebar();
   ca.scrollTop = ca.scrollHeight;
@@ -321,7 +381,12 @@ function renderSidebarHistory() {
   const convs = loadAllConversations();
 
   if (!convs.length) {
-    container.innerHTML = `<p class="history-empty">No conversations yet.<br>Ask your first question!</p>`;
+    container.innerHTML = `
+      <div class="history-section-header">
+        <p class="history-section-label">Recent Searches</p>
+      </div>
+      <p class="history-empty">No searches yet.<br>Ask a question to see history!</p>
+    `;
     return;
   }
 
@@ -331,31 +396,52 @@ function renderSidebarHistory() {
   const recent = convs.filter(c => now - c.updatedAt < weekMs);
   const older  = convs.filter(c => now - c.updatedAt >= weekMs);
 
-  let html = '';
+  let html = `
+    <div class="history-section-header">
+      <p class="history-section-label">Recent Searches</p>
+      <button class="history-clear-btn" id="history-clear-btn" title="Clear all history">Clear</button>
+    </div>
+  `;
   if (recent.length) {
-    html += `<p class="history-section-label">Recent</p>`;
     html += recent.map(c => historyItemHTML(c)).join('');
   }
   if (older.length) {
-    html += `<p class="history-section-label">Older</p>`;
+    html += `<p class="history-section-label" style="margin-top:12px;">Older</p>`;
     html += older.map(c => historyItemHTML(c)).join('');
   }
   container.innerHTML = html;
 
-  // Attach click handlers
+  // Clear button handler
+  $('#history-clear-btn')?.addEventListener('click', clearAllHistory);
+
+  // Attach click handlers for history items
   container.querySelectorAll('.history-item').forEach(item => {
     item.addEventListener('click', () => loadConversation(item.dataset.id));
     item.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') loadConversation(item.dataset.id); });
+  });
+
+  // Attach click handlers for delete buttons
+  container.querySelectorAll('.history-del-btn').forEach(btn => {
+    btn.addEventListener('click', e => deleteConversation(btn.dataset.delId, e));
   });
 }
 
 function historyItemHTML(conv) {
   const active = conv.id === state.activeConversationId ? ' active' : '';
-  const title  = sanitize(conv.title || 'Untitled conversation');
-  return `<button class="history-item${active}" data-id="${conv.id}" tabindex="0" aria-label="Load conversation: ${title}">
-    ${iconHTML('message-circle')}
-    <span>${title}</span>
-  </button>`;
+  const title  = sanitize(conv.title || 'Untitled search');
+  return `
+    <div class="history-item-wrap">
+      <button class="history-item${active}" data-id="${conv.id}" tabindex="0" aria-label="Load search: ${title}">
+        ${iconHTML('clock')}
+        <span>${title}</span>
+      </button>
+      <button class="history-del-btn" data-del-id="${conv.id}" title="Remove from history" aria-label="Delete ${title}">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+  `;
 }
 
 /* ─── Message Building ───────────────────────────────────────── */
@@ -565,37 +651,32 @@ async function submitQuestion() {
   const ca = $('#conversation-area');
   if (!ca) return;
 
-  // If this is the first message in a new session, create the conversation
-  if (!state.activeConversationId) {
-    const title = question.length > MAX_TITLE_LEN
-      ? question.slice(0, MAX_TITLE_LEN) + '…'
-      : question;
-    const conv = {
-      id: uuid(),
-      title,
-      messages: [],
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    };
-    state.activeConversationId = conv.id;
-    upsertConversation(conv);
-  }
+  // Every search query is saved as its own distinct entry in Recent Searches
+  const title = question.length > MAX_TITLE_LEN
+    ? question.slice(0, MAX_TITLE_LEN) + '…'
+    : question;
+  const conv = {
+    id: uuid(),
+    title,
+    messages: [],
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  };
+  state.activeConversationId = conv.id;
+  state.currentMessages = [];
+  upsertConversation(conv);
+
+  // Clear previous search output so current search is prominent
+  ca.innerHTML = '';
 
   // Determine msg index
-  const userMsgIndex = state.currentMessages.length;
-  const aiMsgIndex   = userMsgIndex + 1;
+  const userMsgIndex = 0;
+  const aiMsgIndex   = 1;
 
   // Push user message to state & storage
   const userMsg = { role: 'user', content: question, timestamp: Date.now() };
   state.currentMessages.push(userMsg);
   updateConvMessages();
-
-  // Separator if there were previous messages
-  if (ca.children.length > 0) {
-    const sep = document.createElement('hr');
-    sep.className = 'conv-separator';
-    ca.appendChild(sep);
-  }
 
   // Render user message
   ca.appendChild(buildUserMsgEl(question));

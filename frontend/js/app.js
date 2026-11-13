@@ -11,8 +11,11 @@
 'use strict';
 
 /* ─── Constants ─────────────────────────────────────────────── */
-const API_ASK    = '/api/ask';
-const API_STATUS = '/api/status';
+const API_BASE   = (window.location.protocol === 'file:' || (window.location.port !== '8000' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')))
+  ? 'http://localhost:8000'
+  : '';
+const API_ASK    = `${API_BASE}/api/ask`;
+const API_STATUS = `${API_BASE}/api/status`;
 const STORAGE_KEY = 'policyLensConversations';
 const MAX_TITLE_LEN = 50;
 const MAX_HISTORY_ITEMS = 50;
@@ -168,7 +171,7 @@ function updateThemeIcon(theme) {
 async function fetchStatus() {
   try {
     const res = await fetch(API_STATUS, { signal: AbortSignal.timeout(5000) });
-    if (!res.ok) return;
+    if (!res.ok) throw new Error('Status not ok');
     const data = await res.json();
     const docEl = $('#doc-count');
     if (docEl) docEl.textContent = `${data.documents_indexed} documents indexed`;
@@ -180,6 +183,15 @@ async function fetchStatus() {
     }
     const tooltip = $('#status-tooltip');
     if (tooltip) tooltip.textContent = 'Backend connected';
+
+    const badge = $('#status-badge');
+    if (badge) {
+      badge.style.background = '';
+      const dot = badge.querySelector('.status-dot');
+      if (dot) dot.style.background = '';
+      const txt = badge.querySelector('.status-text');
+      if (txt) txt.textContent = 'System operational';
+    }
   } catch {
     const tooltip = $('#status-tooltip');
     if (tooltip) tooltip.textContent = 'Backend unavailable';
@@ -870,6 +882,8 @@ function renderEvaluation() {
 document.addEventListener('DOMContentLoaded', () => {
   initTheme();
   fetchStatus();
+  // Check health status periodically (every 30 seconds)
+  setInterval(fetchStatus, 30000);
   renderSuggestions();
   renderPolicyLibrary();
   renderHowItWorks();

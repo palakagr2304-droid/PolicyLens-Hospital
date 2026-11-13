@@ -17,6 +17,9 @@ A grounded, hallucination-resistant **Retrieval-Augmented Generation (RAG)** sys
 - [Running the Application](#running-the-application)
   - [1. Web Interface & REST API](#1-web-interface--rest-api)
   - [2. Interactive Terminal CLI](#2-interactive-terminal-cli)
+- [Cloud Deployment (Render / Docker / Railway)](#cloud-deployment-render--docker--railway)
+  - [Deploying to Render (Recommended - Free Tier Available)](#deploying-to-render-recommended---free-tier-available)
+  - [Deploying with Docker](#deploying-with-docker)
 - [API Reference](#api-reference)
 - [Guardrails & Anti-Hallucination Rules](#guardrails--anti-hallucination-rules)
 - [Git & Security Best Practices](#git--security-best-practices)
@@ -241,6 +244,54 @@ python rag.py
 ```
 
 Enter any question at the prompt (e.g. *"What is the policy for emergency admission deposits?"* or *"What are visiting hours in the ICU?"*). Type `exit` to quit.
+
+---
+
+## Cloud Deployment (Render / Docker / Railway)
+
+PolicyLens uses a persistent hybrid RAG pipeline (`sentence-transformers` + `scikit-learn` + FastAPI). Because PyTorch and transformer embeddings require persistent memory and exceed the 250 MB serverless package limit of platforms like Vercel, **Render** (or Docker/Railway) is the recommended hosting platform.
+
+### Deploying to Render (Recommended - Free Tier Available)
+
+#### Option A: Using Render Blueprints (Automatic with `render.yaml`)
+1. Push your repository to GitHub.
+2. Sign in to [Render](https://dashboard.render.com/).
+3. In the Render Dashboard, click **New +** and select **Blueprint**.
+4. Connect your GitHub repository (`PolicyLens-Hospital`).
+5. Render detects `render.yaml` automatically.
+6. When prompted, enter your `GEMINI_API_KEY`.
+7. Click **Apply**. Render will install the dependencies, pre-cache the embedding model, and deploy the service.
+
+#### Option B: Manual Web Service Setup
+1. In Render, click **New +** > **Web Service**.
+2. Connect your GitHub repository.
+3. Configure the settings:
+   - **Environment**: `Python`
+   - **Build Command**: `pip install --no-cache-dir -r requirements.txt && python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('all-MiniLM-L6-v2')"`
+   - **Start Command**: `uvicorn api:app --host 0.0.0.0 --port $PORT`
+   - **Plan**: `Free`
+4. Under **Environment Variables**, add:
+   - `GEMINI_API_KEY`: `<your_google_gemini_api_key>`
+   - `PYTHON_VERSION`: `3.11.9`
+5. Click **Create Web Service**.
+
+Once deployed, Render gives you a public URL (e.g., `https://policylens.onrender.com`) where both the Web UI and REST API are live.
+
+---
+
+### Deploying with Docker
+
+A production-ready `Dockerfile` is included in the project:
+
+```bash
+# Build the Docker image
+docker build -t policylens .
+
+# Run the container locally (providing your Gemini API key)
+docker run -p 8000:8000 -e GEMINI_API_KEY="your_api_key_here" policylens
+```
+
+You can deploy this Docker container to any container platform including **Render (Docker Web Service)**, **Railway**, **Fly.io**, or **Koyeb**.
 
 ---
 

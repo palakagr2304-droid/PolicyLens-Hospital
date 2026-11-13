@@ -17,5 +17,3 @@ dependencies = [
     "gunicorn>=21.2.0"
 ]
 
-[tool.vercel]
-entrypoint = "api:app"

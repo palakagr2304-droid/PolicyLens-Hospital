@@ -8,7 +8,7 @@ from llm import generate_answer
 
 TOP_K = 5
 
-MIN_HYBRID_SCORE = 0.30
+MIN_HYBRID_SCORE = 0.20
 
 
 # ---------------------------------------------------------

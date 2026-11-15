@@ -1,9 +1,10 @@
 import json
+import os
 import joblib
+import requests
 import numpy as np
 
 from pathlib import Path
-from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 
 
@@ -76,22 +77,58 @@ print(
 
 
 # ---------------------------------------------------------
-# Load embedding model
+# Embedding model management (Lazy loaded & Cloud-optimized)
 # ---------------------------------------------------------
 
-print("\nLoading embedding model...")
+_model = None
 
-try:
-    model = SentenceTransformer(
-        "all-MiniLM-L6-v2",
-        local_files_only=True
-    )
-except Exception:
-    model = SentenceTransformer(
-        "all-MiniLM-L6-v2"
-    )
 
-print("Model loaded.")
+def get_question_embedding(question: str) -> np.ndarray:
+    """
+    Generate normalized embedding for user query.
+    1. If HF_TOKEN is configured in environment, queries Hugging Face Serverless
+       Inference API (0 MB local RAM footprint — ideal for Render 512MB free tier).
+    2. Otherwise, lazy-loads local SentenceTransformer model with strict single-thread
+       CPU memory optimizations.
+    """
+    hf_token = os.getenv("HF_TOKEN")
+    if hf_token:
+        try:
+            api_url = "https://router.huggingface.co/hf-inference/models/sentence-transformers/all-MiniLM-L6-v2"
+            headers = {"Authorization": f"Bearer {hf_token}"}
+            payload = {"inputs": [question], "options": {"wait_for_model": True}}
+            res = requests.post(api_url, headers=headers, json=payload, timeout=6)
+            if res.status_code == 200:
+                emb = np.array(res.json(), dtype=np.float32)
+                if emb.ndim == 2:
+                    norm = np.linalg.norm(emb, axis=1, keepdims=True)
+                    return emb / np.maximum(norm, 1e-12)
+        except Exception as e:
+            print(f"[Embedding API Warning] Remote embedding failed, falling back to local: {e}")
+
+    # Local fallback: lazy load model on first query
+    global _model
+    if _model is None:
+        print("\nLoading local embedding model...")
+        import torch
+        torch.set_grad_enabled(False)
+        torch.set_num_threads(1)
+        from sentence_transformers import SentenceTransformer
+        try:
+            _model = SentenceTransformer(
+                "all-MiniLM-L6-v2",
+                local_files_only=True,
+                device="cpu"
+            )
+        except Exception:
+            _model = SentenceTransformer(
+                "all-MiniLM-L6-v2",
+                device="cpu"
+            )
+        _model.eval()
+        print("Local embedding model loaded.")
+
+    return _model.encode([question], normalize_embeddings=True)
 
 
 # ---------------------------------------------------------
@@ -128,10 +165,7 @@ def retrieve(
     # Create embedding for question
     # -----------------------------------------------------
 
-    question_embedding = model.encode(
-        [question],
-        normalize_embeddings=True
-    )
+    question_embedding = get_question_embedding(question)
 
 
     # -----------------------------------------------------

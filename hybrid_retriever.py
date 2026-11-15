@@ -93,18 +93,24 @@ def get_question_embedding(question: str) -> np.ndarray:
     """
     hf_token = os.getenv("HF_TOKEN")
     if hf_token:
-        try:
-            api_url = "https://router.huggingface.co/hf-inference/models/sentence-transformers/all-MiniLM-L6-v2"
-            headers = {"Authorization": f"Bearer {hf_token}"}
-            payload = {"inputs": [question], "options": {"wait_for_model": True}}
-            res = requests.post(api_url, headers=headers, json=payload, timeout=6)
-            if res.status_code == 200:
-                emb = np.array(res.json(), dtype=np.float32)
-                if emb.ndim == 2:
-                    norm = np.linalg.norm(emb, axis=1, keepdims=True)
-                    return emb / np.maximum(norm, 1e-12)
-        except Exception as e:
-            print(f"[Embedding API Warning] Remote embedding failed, falling back to local: {e}")
+        headers = {"Authorization": f"Bearer {hf_token.strip()}"}
+        payload = {"inputs": [question], "options": {"wait_for_model": True}}
+        urls = [
+            "https://api-inference.huggingface.co/pipeline/feature-extraction/sentence-transformers/all-MiniLM-L6-v2",
+            "https://router.huggingface.co/hf-inference/models/sentence-transformers/all-MiniLM-L6-v2",
+        ]
+        for api_url in urls:
+            try:
+                res = requests.post(api_url, headers=headers, json=payload, timeout=8)
+                if res.status_code == 200:
+                    emb = np.array(res.json(), dtype=np.float32)
+                    if emb.ndim == 1:
+                        emb = np.expand_dims(emb, axis=0)
+                    if emb.ndim == 2 and emb.shape[1] == 384:
+                        norm = np.linalg.norm(emb, axis=1, keepdims=True)
+                        return emb / np.maximum(norm, 1e-12)
+            except Exception as e:
+                print(f"[Embedding API Warning] Endpoint {api_url} failed: {e}")
 
     # Local fallback: lazy load model on first query
     global _model

@@ -112,7 +112,12 @@ def get_question_embedding(question: str) -> np.ndarray:
             except Exception as e:
                 print(f"[Embedding API Warning] Endpoint {api_url} failed: {e}")
 
-    # Local fallback: lazy load model on first query
+    # If running on Render (512MB free tier), avoid loading local PyTorch to prevent OOM kills
+    if os.getenv("RENDER"):
+        print("[Embedding Info] Running in Render cloud environment; using TF-IDF ranking fallback.")
+        return None
+
+    # Local fallback: lazy load model on first query (for local machines)
     global _model
     if _model is None:
         print("\nLoading local embedding model...")
@@ -175,24 +180,22 @@ def retrieve(
 
 
     # -----------------------------------------------------
-    # Calculate embedding similarity
+    # Calculate embedding similarity & hybrid score
     # -----------------------------------------------------
 
-    embedding_scores = cosine_similarity(
-        question_embedding,
-        embeddings
-    )[0]
-
-
-    # -----------------------------------------------------
-    # Combine both scores
-    # -----------------------------------------------------
-
-    hybrid_scores = (
-        tfidf_weight * tfidf_scores
-        +
-        embedding_weight * embedding_scores
-    )
+    if question_embedding is not None:
+        embedding_scores = cosine_similarity(
+            question_embedding,
+            embeddings
+        )[0]
+        hybrid_scores = (
+            tfidf_weight * tfidf_scores
+            +
+            embedding_weight * embedding_scores
+        )
+    else:
+        embedding_scores = np.zeros_like(tfidf_scores)
+        hybrid_scores = tfidf_scores
 
 
     # -----------------------------------------------------
